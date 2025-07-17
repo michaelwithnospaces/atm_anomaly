@@ -30,13 +30,25 @@ function App() {
   });
 
   const fetchData = () => {
+    // Ensure all contamination values are valid before making the request
+    const safeParams = { ...params };
+    for (const m of METRICS) {
+      const key = `${m.key}_contamination`;
+      let val = safeParams[key];
+      if (val === "" || val === undefined || val === null || isNaN(Number(val)) || Number(val) <= 0) {
+        safeParams[key] = 0.01;
+      } else {
+        safeParams[key] = Number(val);
+      }
+    }
     // Build query string
-    const query = Object.entries(params)
+    const query = Object.entries(safeParams)
       .map(([k, v]) => `${k}=${v}`)
       .join("&");
     axios
       .get(`http://localhost:8000/data?${query}`)
-      .then((res) => setData(res.data));
+      .then((res) => setData(res.data))
+      .catch(() => {}); // Silently ignore errors
   };
 
   useEffect(() => {
@@ -66,7 +78,7 @@ function App() {
 
   // Handler for contamination blur (when input loses focus)
   const handleContaminationBlur = (metric, value) => {
-    if (isNaN(value) || value <= 0) {
+    if (isNaN(value) || value <= 0 || value === "" || value === undefined || value === null) {
       setParams((prev) => ({
         ...prev,
         [`${metric}_contamination`]: 0.01,
