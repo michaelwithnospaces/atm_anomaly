@@ -22,7 +22,8 @@ app.add_middleware(
     allow_headers=["*"],        # allow all custom headers
 )
 
-# create a route (URL endpoint) for GET requests at /data
+# create a route (URL endpoint) for GET requests at /data 
+
 # when user visits http://localhost:8000/data, this function will run
 @app.get("/data")
 def get_anomaly_data(
