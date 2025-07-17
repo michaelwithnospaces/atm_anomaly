@@ -25,99 +25,89 @@ app.add_middleware(
 # create a route (URL endpoint) for GET requests at /data
 # when user visits http://localhost:8000/data, this function will run
 @app.get("/data")
-# https://example.com/search?term=python&limit=10
-def get_anomaly_data(spikes: int = Query(1, ge=0), drops: int = Query(1, ge=0), contamination: float = Query(1, ge=0)):
-    # for testing consistency
+def get_anomaly_data(
+    visits_spikes: int = Query(1, ge=0),
+    visits_drops: int = Query(1, ge=0),
+    visits_contamination: float = Query(0.1, ge=0.01, le=0.5),
+    withdrawals_spikes: int = Query(1, ge=0),
+    withdrawals_drops: int = Query(1, ge=0),
+    withdrawals_contamination: float = Query(0.1, ge=0.01, le=0.5),
+    deposits_spikes: int = Query(1, ge=0),
+    deposits_drops: int = Query(1, ge=0),
+    deposits_contamination: float = Query(0.1, ge=0.01, le=0.5),
+    checkbalance_spikes: int = Query(1, ge=0),
+    checkbalance_drops: int = Query(1, ge=0),
+    checkbalance_contamination: float = Query(0.1, ge=0.01, le=0.5),
+):
     np.random.seed(69)
-
-    # 24 "visits" (one per hour)
-    # centered around 150 with a standard deviation of 20.
-    visits = np.random.normal(150, 20, 24).astype(int) # normal gaussian distribution
-
-    # inject a couple of anomalies
-    # visits[8] = 300   # spike
-    # visits[20] = 30   # drop
-
     timestamps = pd.date_range("2025-01-01", periods=24, freq='h')
-
-    all_indices = np.arange(24)
-    # array([ 0, 1, 2, 3, ..., 23 ])
-    # this array represents the indices of the 24 data points.
-    # indices are later used to randomly choose which data points will have spikes or drops injected
-
-    # choses spikes+drops indices from all_indices
-    chosen_indices = np.random.choice(all_indices, size=spikes + drops, replace=False)
-    # if size is 5: array([4, 17, 8, 21, 13])
-
-    spike_indices = chosen_indices[:spikes] # spikes non-inclusive
-    drop_indices = chosen_indices[spikes:spikes + drops]
-
-    for idx in spike_indices:
-        visits[idx] = 300  # High spike
-    for idx in drop_indices:
-        visits[idx] = 30   # Low drop
-
-    # a pandas DataFrame with the timestamps and visit counts
-    df = pd.DataFrame({"timestamp": timestamps, "visits": visits})
-    #             timestamp  visits
-    # 0 2025-01-01 00:00:00     160
-    # 1 2025-01-01 01:00:00     154
-    # 2 2025-01-01 02:00:00     165
-    # 3 2025-01-01 03:00:00     183
-    # 4 2025-01-01 04:00:00     152
-
-
-    # [100, 102, 98, 101, 99, 300]
-    # picks a random number between the min and max (98 to 300) to split on
-    #
-    #    first split: pick 150
-    #    [100, 102, 98, 101, 99] (go left)
-    #    [300] (go right)
-    #
-    # 300 is isolated in just 1 step
-    # keep building trees like this multiple times (each tree uses different random splits).
-
-    # an isolation forest model on the visit data to find anomalies
-    # unsupervised ML model learns the "normal pattern" and flags unusual data points or what we call anomolies
-    # i think about X% of this data is weird. go find that much. isolation forest doesnt actually know how many points are weird
-    # patterns from data without being told what the right answer is.
-    model = IsolationForest(contamination=contamination)  # 10% of the data is weird
-
-    # apply model: it returns -1 for anomaly, 1 for normal
-    # give the model df[["visits"]] which is just the visit column, but fit_predict expects 2d input
-    # [ 1,  1, -1,  1, -1 ] == -1 -> [False, False, True, False, True]
-    # adds a new column called anomaly to the DataFrame
-    df["anomaly"] = model.fit_predict(df[["visits"]]) == -1
-
-    # anomalies become nan
-    # df["visits"] is the original series of visit numbers
-    # df["anomaly"] is a boolean Series
-    masked_visits = df["visits"].mask(df["anomaly"])
-    # [150, NaN, 140, NaN]
-
-    # fills in the nan using linear interpolation
-    interpolated_visits = masked_visits.interpolate(method="linear")
-
-    # create 2 new columns
-    # 3-hour rolling average and standard deviation
-    # visualize what the "normal range" of traffic should look like
-    # this is a moving window of size 3. it slides through the "visits" column, looking at 3 rows at a time.
-    # first and last position nan
-    df["mean"] = interpolated_visits.rolling(3, center=True).mean()
-    df["std"] = interpolated_visits.rolling(3, center=True).std()
-
-    # define the upper and lower bounds using 2 standard deviations from the mean
-    # outside these bounds are considered unusual
-    df["upper"] = df["mean"] + 2 * df["std"] # average value of visits near that hour
-    df["lower"] = df["mean"] - 2 * df["std"] # how much visit numbers normally vary near that hour
- 
-
-    # replace nan with 0
-    df.fillna(0, inplace=True)
-
-    # convert timestamp to string for our friend json
-    df["timestamp"] = df["timestamp"].astype(str)
-
-    # convert the df into a list of dictionaries so it can be returned as json
-    # orient="records" = “make each row a dictionary”
-    return df.to_dict(orient="records")
+    metric_seeds = {"visits": 0, "withdrawals": 1, "deposits": 2, "checkbalance": 3}
+    metrics = {
+        "visits": {
+            "data": np.random.normal(150, 20, 24).astype(int),
+            "spikes": visits_spikes,
+            "drops": visits_drops,
+            "contamination": visits_contamination,
+        },
+        "withdrawals": {
+            "data": np.random.normal(150, 20, 24).astype(int),
+            "spikes": withdrawals_spikes,
+            "drops": withdrawals_drops,
+            "contamination": withdrawals_contamination,
+        },
+        "deposits": {
+            "data": np.random.normal(150, 20, 24).astype(int),
+            "spikes": deposits_spikes,
+            "drops": deposits_drops,
+            "contamination": deposits_contamination,
+        },
+        "checkbalance": {
+            "data": np.random.normal(150, 20, 24).astype(int),
+            "spikes": checkbalance_spikes,
+            "drops": checkbalance_drops,
+            "contamination": checkbalance_contamination,
+        },
+    }
+    # Inject anomalies for each metric
+    for metric, info in metrics.items():
+        np.random.seed(69 + metric_seeds[metric] * 1000 + info["spikes"] * 100 + info["drops"])
+        all_indices = np.arange(24)
+        total_anomalies = info["spikes"] + info["drops"]
+        if total_anomalies > 0:
+            chosen_indices = np.random.choice(all_indices, size=total_anomalies, replace=False)
+            spike_indices = chosen_indices[:info["spikes"]]
+            drop_indices = chosen_indices[info["spikes"]:info["spikes"] + info["drops"]]
+            for idx in spike_indices:
+                info["data"][idx] = 300  # High spike
+            for idx in drop_indices:
+                info["data"][idx] = 30   # Low drop
+    # Prepare output records
+    records = []
+    # For each metric, fit the model ONCE and get anomaly labels for all hours
+    metric_results = {}
+    for metric, info in metrics.items():
+        df = pd.DataFrame({"value": info["data"]})
+        model = IsolationForest(contamination=info["contamination"])
+        df["anomaly"] = model.fit_predict(df[["value"]]) == -1
+        masked = df["value"].mask(df["anomaly"])
+        interpolated = masked.interpolate(method="linear")
+        df["mean"] = interpolated.rolling(3, center=True).mean()
+        df["std"] = interpolated.rolling(3, center=True).std()
+        df["upper"] = df["mean"] + 2 * df["std"]
+        df["lower"] = df["mean"] - 2 * df["std"]
+        df.fillna(0, inplace=True)
+        metric_results[metric] = df
+    for i in range(24):
+        record = {"timestamp": str(timestamps[i]), "metrics": {}}
+        for metric in metrics.keys():
+            df = metric_results[metric]
+            record["metrics"][metric] = {
+                "value": int(df.loc[i, "value"]),
+                "anomaly": bool(df.loc[i, "anomaly"]),
+                "mean": float(df.loc[i, "mean"]),
+                "std": float(df.loc[i, "std"]),
+                "upper": float(df.loc[i, "upper"]),
+                "lower": float(df.loc[i, "lower"]),
+            }
+        records.append(record)
+    return records
