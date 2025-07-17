@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Dark green theme with light mode */
+    --background: 0 0% 100%;
+    --foreground: 153 30% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 153 30% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 153 30% 15%;
+    --primary: 153 60% 35%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 153 20% 92%;
+    --secondary-foreground: 153 30% 15%;
+    --muted: 153 10% 95%;
+    --muted-foreground: 153 15% 45%;
+    --accent: 153 40% 85%;
+    --accent-foreground: 153 30% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 153 20% 85%;
+    --input: 153 20% 90%;
+    --ring: 153 60% 35%;
+    
+    /* Chart colors - beautiful green palette */
+    --chart-1: 153 80% 45%;  /* Primary green */
+    --chart-2: 43 85% 65%;   /* Golden yellow */
+    --chart-3: 0 70% 55%;    /* Alert red */
+    --chart-4: 200 80% 50%;  /* Info blue */
+    --chart-5: 280 60% 60%;  /* Purple accent */
+    
+    /* Custom dashboard colors */
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 217 91% 60%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(153 60% 35%), hsl(153 80% 45%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(153 10% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 12px -2px hsl(153 60% 35% / 0.1);
+    --shadow-elevated: 0 8px 24px -4px hsl(153 60% 35% / 0.15);
+    
+    --radius: 0.75rem;
+    
+    /* Keep sidebar variables */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 153 30% 15%;
+    --sidebar-primary: 153 60% 35%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 153 20% 92%;
+    --sidebar-accent-foreground: 153 30% 15%;
+    --sidebar-border: 153 20% 85%;
+    --sidebar-ring: 153 60% 35%;
+  }
+
+  .dark {
+    /* Dark green theme */
+    --background: 153 25% 8%;
+    --foreground: 153 15% 90%;
+    --card: 153 20% 10%;
+    --card-foreground: 153 15% 90%;
+    --popover: 153 20% 10%;
+    --popover-foreground: 153 15% 90%;
+    --primary: 153 70% 55%;
+    --primary-foreground: 153 25% 8%;
+    --secondary: 153 15% 18%;
+    --secondary-foreground: 153 15% 85%;
+    --muted: 153 10% 15%;
+    --muted-foreground: 153 10% 60%;
+    --accent: 153 25% 20%;
+    --accent-foreground: 153 15% 85%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 153 15% 18%;
+    --input: 153 15% 18%;
+    --ring: 153 70% 55%;
+    
+    /* Chart colors - adjusted for dark mode */
+    --chart-1: 153 70% 55%;  /* Brighter green for dark */
+    --chart-2: 43 80% 70%;   /* Brighter yellow */
+    --chart-3: 0 75% 65%;    /* Brighter red */
+    --chart-4: 200 75% 60%;  /* Brighter blue */
+    --chart-5: 280 65% 70%;  /* Brighter purple */
+    
+    /* Custom dashboard colors - dark variants */
+    --success: 142 60% 50%;
+    --warning: 38 85% 60%;
+    --error: 0 70% 65%;
+    --info: 217 80% 65%;
+    
+    /* Gradients for dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(153 70% 55%), hsl(153 60% 45%));
+    --gradient-card: linear-gradient(180deg, hsl(153 20% 10%), hsl(153 15% 12%));
+    
+    /* Shadows for dark mode */
+    --shadow-card: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
+    
+    /* Update sidebar vars for dark mode */
+    --sidebar-background: 153 25% 8%;
+    --sidebar-foreground: 153 15% 90%;
+    --sidebar-primary: 153 70% 55%;
+    --sidebar-primary-foreground: 153 25% 8%;
+    --sidebar-accent: 153 15% 18%;
+    --sidebar-accent-foreground: 153 15% 85%;
+    --sidebar-border: 153 15% 18%;
+    --sidebar-ring: 153 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
