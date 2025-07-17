@@ -17,6 +17,7 @@ A simple web app for detecting and visualizing anomalies (spikes and drops) in h
 ---
 
 ## Project Structure
+```
 .
 ├── backend/               # FastAPI server
 │   ├── main.py
@@ -25,6 +26,7 @@ A simple web app for detecting and visualizing anomalies (spikes and drops) in h
 └── anomaly-frontend/      # React app
 ├── public/
 └── src/
+```
 
 ---
 
