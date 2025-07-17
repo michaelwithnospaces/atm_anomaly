@@ -1,0 +1,10 @@
+[backend]
+python -m venv venv
+
+source venv/bin/activate
+uvicorn main:app --reload
+
+[frontend]
+npx create-react-app anomaly-frontend
+
+npm start

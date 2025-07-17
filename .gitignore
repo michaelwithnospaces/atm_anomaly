@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# FastAPI logs or output
+*.log
+
+# VSCode
+.vscode/
+
+# Node.js
+node_modules/
+build/
+.env
+.DS_Store
