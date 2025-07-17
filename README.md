@@ -1,7 +1,3 @@
-
-Here's the revised and properly formatted GitHub README using markdown, with all emojis removed and improved structure:
-
-```markdown
 # Anomaly Detection App
 
 A simple web app for detecting and visualizing anomalies (spikes and drops) in hourly traffic data using an Isolation Forest algorithm.
@@ -21,9 +17,6 @@ A simple web app for detecting and visualizing anomalies (spikes and drops) in h
 ---
 
 ## Project Structure
-
-```
-
 .
 ├── backend/               # FastAPI server
 │   ├── main.py
@@ -32,8 +25,6 @@ A simple web app for detecting and visualizing anomalies (spikes and drops) in h
 └── anomaly-frontend/      # React app
 ├── public/
 └── src/
-
-````
 
 ---
 
@@ -51,7 +42,6 @@ A simple web app for detecting and visualizing anomalies (spikes and drops) in h
 2. Navigate to the backend folder:
    ```bash
    cd backend
-````
 
 3. Create and activate a virtual environment:
 
