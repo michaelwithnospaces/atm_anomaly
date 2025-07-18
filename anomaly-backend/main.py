@@ -28,16 +28,12 @@ app.add_middleware(
 def get_anomaly_data(
     visits_spikes: int = Query(1, ge=0),
     visits_drops: int = Query(1, ge=0),
-    visits_contamination: float = Query(0.1, ge=0.01, le=0.5),
     withdrawals_spikes: int = Query(1, ge=0),
     withdrawals_drops: int = Query(1, ge=0),
-    withdrawals_contamination: float = Query(0.1, ge=0.01, le=0.5),
     deposits_spikes: int = Query(1, ge=0),
     deposits_drops: int = Query(1, ge=0),
-    deposits_contamination: float = Query(0.1, ge=0.01, le=0.5),
     checkbalance_spikes: int = Query(1, ge=0),
     checkbalance_drops: int = Query(1, ge=0),
-    checkbalance_contamination: float = Query(0.1, ge=0.01, le=0.5),
 ):
     np.random.seed(69)
     timestamps = pd.date_range("2025-01-01", periods=24, freq='h')
@@ -47,27 +43,24 @@ def get_anomaly_data(
             "data": np.random.normal(150, 20, 24).astype(int),
             "spikes": visits_spikes,
             "drops": visits_drops,
-            "contamination": visits_contamination,
         },
         "withdrawals": {
             "data": np.random.normal(150, 20, 24).astype(int),
             "spikes": withdrawals_spikes,
             "drops": withdrawals_drops,
-            "contamination": withdrawals_contamination,
         },
         "deposits": {
             "data": np.random.normal(150, 20, 24).astype(int),
             "spikes": deposits_spikes,
             "drops": deposits_drops,
-            "contamination": deposits_contamination,
         },
         "checkbalance": {
             "data": np.random.normal(150, 20, 24).astype(int),
             "spikes": checkbalance_spikes,
             "drops": checkbalance_drops,
-            "contamination": checkbalance_contamination,
         },
     }
+
     # Inject anomalies for each metric
     for metric, info in metrics.items():
         np.random.seed(69 + metric_seeds[metric] * 1000 + info["spikes"] * 100 + info["drops"])
@@ -81,13 +74,28 @@ def get_anomaly_data(
                 info["data"][idx] = 300  # High spike
             for idx in drop_indices:
                 info["data"][idx] = 30   # Low drop
+
     # Prepare output records
     records = []
+
     # For each metric, fit the model ONCE and get anomaly labels for all hours
     metric_results = {}
+
+    # helper function to estimate contamination dynamically based on IQR
+    def estimate_contamination(values):
+        q1 = np.percentile(values, 25)
+        q3 = np.percentile(values, 75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        # initially returns boolean array and .sum counts number of true
+        outliers = ((values < lower_bound) | (values > upper_bound)).sum()
+        return min(max(outliers / len(values), 0.01), 0.5)  # enforce contamination between [0.01, 0.5]
+
     for metric, info in metrics.items():
         df = pd.DataFrame({"value": info["data"]})
-        model = IsolationForest(contamination=info["contamination"])
+        contamination = estimate_contamination(df["value"].values)  # dynamically calculated contamination
+        model = IsolationForest(contamination=contamination)
         df["anomaly"] = model.fit_predict(df[["value"]]) == -1
         masked = df["value"].mask(df["anomaly"])
         interpolated = masked.interpolate(method="linear")
@@ -97,6 +105,7 @@ def get_anomaly_data(
         df["lower"] = df["mean"] - 2 * df["std"]
         df.fillna(0, inplace=True)
         metric_results[metric] = df
+
     for i in range(24):
         record = {"timestamp": str(timestamps[i]), "metrics": {}}
         for metric in metrics.keys():
@@ -110,4 +119,5 @@ def get_anomaly_data(
                 "lower": float(df.loc[i, "lower"]),
             }
         records.append(record)
+
     return records
