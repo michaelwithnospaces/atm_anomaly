@@ -87,9 +87,85 @@ function App() {
     }
   };
 
+  // Helper to get all alerts (anomalies) from the data
+  const getAllAlerts = () => {
+    const alerts = [];
+    data.forEach((row) => {
+      for (const m of METRICS) {
+        if (row.metrics[m.key].anomaly) {
+          alerts.push({
+            category: m.label,
+            key: m.key,
+            color: m.color,
+            value: row.metrics[m.key].value,
+            timestamp: row.timestamp,
+          });
+        }
+      }
+    });
+    return alerts;
+  };
+
+  // Helper to count alerts per category
+  const getAlertCount = (metricKey) =>
+    data.filter((row) => row.metrics[metricKey].anomaly).length;
+
   return (
     <div style={{ padding: 20 }}>
       <h2>ATM Anomaly Detection (Isolation Forest)</h2>
+      {/* Chart Legend (already present via <Legend /> in recharts) */}
+      {/* Dashboard banners */}
+      <div style={{ display: 'flex', gap: 24, margin: '24px 0' }}>
+        {METRICS.map((m) => (
+          <div key={m.key} style={{
+            flex: 1,
+            background: m.color + '22',
+            border: `2px solid ${m.color}`,
+            borderRadius: 8,
+            padding: 16,
+            textAlign: 'center',
+            fontWeight: 600,
+            fontSize: 18,
+          }}>
+            {m.label} Alerts: <span style={{ color: m.color }}>{getAlertCount(m.key)}</span>
+          </div>
+        ))}
+      </div>
+      {/* Alert window */}
+      <div style={{
+        background: '#fffbe6',
+        border: '2px solid #ffe58f',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 32,
+        minHeight: 48,
+        boxShadow: '0 2px 8px #0001',
+      }}>
+        <h4 style={{ margin: 0, marginBottom: 8 }}>Active Alerts</h4>
+        {getAllAlerts().length === 0 ? (
+          <div style={{ color: '#999' }}>No active alerts</div>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {getAllAlerts().map((alert, idx) => (
+              <li key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                marginBottom: 4,
+                borderLeft: `6px solid ${alert.color}`,
+                paddingLeft: 8,
+                background: alert.color + '11',
+                borderRadius: 4,
+              }}>
+                <span style={{ color: alert.color, fontWeight: 700 }}>{alert.category}</span>
+                <span style={{ fontFamily: 'monospace' }}>{alert.value}</span>
+                <span style={{ color: '#555' }}>{alert.timestamp}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {/* Graphs */}
       <div>
         {METRICS.map((m) => (
           <div key={m.key} style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-start', gap: 32 }}>
