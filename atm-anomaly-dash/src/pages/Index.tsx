@@ -87,6 +87,29 @@ const Index = () => {
     }
   };
 
+  // Helper to get all alerts (anomalies) from the data
+  const getAllAlerts = () => {
+    const alerts = [];
+    data.forEach((row) => {
+      for (const m of METRICS) {
+        if (row.metrics[m.key].anomaly) {
+          alerts.push({
+            category: m.label,
+            key: m.key,
+            color: m.color,
+            value: row.metrics[m.key].value,
+            timestamp: row.timestamp,
+          });
+        }
+      }
+    });
+    return alerts;
+  };
+
+  // Helper to count alerts per category
+  const getAlertCount = (metricKey: string) =>
+    data.filter((row) => row.metrics[metricKey].anomaly).length;
+
   return (
     <div className="min-h-screen bg-background p-6">
       {/* Header */}
@@ -102,6 +125,39 @@ const Index = () => {
 
       {/* Global Legend */}
       <Legend />
+
+      {/* Dashboard banners */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {METRICS.map((m) => (
+          <div key={m.key} className="flex flex-col items-center justify-center p-4 rounded-lg border-2 font-semibold text-lg" style={{ borderColor: m.color, background: m.color + '22', color: m.color }}>
+            {m.label} Alerts: <span className="font-bold" style={{ color: m.color }}>{getAlertCount(m.key)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Alert window */}
+      <div className="mb-8 p-4 rounded-lg border-2 bg-card border-border shadow" style={{}}>
+        <h4 className="mb-2 font-semibold text-foreground">Active Alerts</h4>
+        {getAllAlerts().length === 0 ? (
+          <div className="text-muted-foreground">No active alerts</div>
+        ) : (
+          <ul className="list-none p-0 m-0">
+            {getAllAlerts().map((alert, idx) => (
+              <li key={idx} className="flex items-center gap-6 mb-2 p-2 rounded bg-muted" style={{ borderLeft: `6px solid ${alert.color}` }}>
+                <span className="font-bold" style={{ color: alert.color }}>
+                  Category: {alert.category}
+                </span>
+                <span className="font-mono text-foreground">
+                  Value: {alert.value}
+                </span>
+                <span className="text-muted-foreground">
+                  Time: {alert.timestamp}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* 2x2 Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
