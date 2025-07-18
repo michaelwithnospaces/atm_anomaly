@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ChartTest from "./ChartTest";
 import axios from "axios";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Dot
@@ -141,6 +142,15 @@ function App() {
           </div>
         ))}
       </div>
+      {/* Divider for clarity */}
+      <hr style={{ margin: '40px 0' }} />
+      <h2>MUI X Charts (Material UI)</h2>
+      {/* Render MUI X ChartTest for each metric */}
+      {METRICS.map((m) => (
+        <div key={m.key} style={{ marginBottom: 48 }}>
+          <ChartTest data={getChartData(m.key)} metricLabel={m.label} />
+        </div>
+      ))}
     </div>
   );
 }
