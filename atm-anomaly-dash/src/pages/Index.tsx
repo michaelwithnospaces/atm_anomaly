@@ -4,6 +4,7 @@ import { ModeToggle } from "@/components/ModeToggle";
 import { Legend } from "@/components/Legend";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Dot } from "recharts";
 import { MetricControls } from "@/components/MetricControls";
+import { BarChart, Bar, Cell, XAxis as BarXAxis, YAxis as BarYAxis, Tooltip as BarTooltip, ResponsiveContainer as BarResponsiveContainer } from "recharts";
 
 const METRICS = [
   { key: "visits", label: "Visits", color: "hsl(var(--chart-1))" },
@@ -110,6 +111,48 @@ const Index = () => {
   const getAlertCount = (metricKey: string) =>
     data.filter((row) => row.metrics[metricKey].anomaly).length;
 
+  // Helper to compute severity buckets for a given metric
+  const getSeverityBucketsForMetric = (metricKey) => {
+    const buckets = { Low: 0, Medium: 0, High: 0 };
+    data.forEach((row) => {
+      const metric = row.metrics[metricKey];
+      if (metric.anomaly) {
+        const std = metric.std || 1; // avoid div by zero
+        const z = Math.abs((metric.value - metric.mean) / std);
+        if (z < 2) buckets.Low++;
+        else if (z < 4) buckets.Medium++;
+        else buckets.High++;
+      }
+    });
+    return [
+      { name: "Low", count: buckets.Low },
+      { name: "Medium", count: buckets.Medium },
+      { name: "High", count: buckets.High },
+    ];
+  };
+
+  // Helper to compute total severity buckets across all metrics
+  const getTotalSeverityBuckets = () => {
+    const buckets = { Low: 0, Medium: 0, High: 0 };
+    data.forEach((row) => {
+      for (const m of METRICS) {
+        const metric = row.metrics[m.key];
+        if (metric.anomaly) {
+          const std = metric.std || 1;
+          const z = Math.abs((metric.value - metric.mean) / std);
+          if (z < 2) buckets.Low++;
+          else if (z < 4) buckets.Medium++;
+          else buckets.High++;
+        }
+      }
+    });
+    return [
+      { name: "Low", count: buckets.Low },
+      { name: "Medium", count: buckets.Medium },
+      { name: "High", count: buckets.High },
+    ];
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       {/* Header */}
@@ -135,28 +178,88 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Alert window */}
-      <div className="mb-8 p-4 rounded-lg border-2 bg-card border-border shadow" style={{}}>
-        <h4 className="mb-2 font-semibold text-foreground">Active Alerts</h4>
-        {getAllAlerts().length === 0 ? (
-          <div className="text-muted-foreground">No active alerts</div>
-        ) : (
-          <ul className="list-none p-0 m-0">
-            {getAllAlerts().map((alert, idx) => (
-              <li key={idx} className="flex items-center gap-6 mb-2 p-2 rounded bg-muted" style={{ borderLeft: `6px solid ${alert.color}` }}>
-                <span className="font-bold" style={{ color: alert.color }}>
-                  Category: {alert.category}
-                </span>
-                <span className="font-mono text-foreground">
-                  Value: {alert.value}
-                </span>
-                <span className="text-muted-foreground">
-                  Time: {alert.timestamp}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Active Alerts and Total Severity Row */}
+      <div className="w-full flex flex-col lg:flex-row gap-8 mb-8 items-stretch">
+        {/* Active Alerts */}
+        <div className="flex-1 w-full p-4 rounded-lg border-2 bg-card border-border shadow">
+          <h4 className="mb-2 font-semibold text-foreground">Active Alerts</h4>
+          {getAllAlerts().length === 0 ? (
+            <div className="text-muted-foreground">No active alerts</div>
+          ) : (
+            <ul className="list-none p-0 m-0">
+              {getAllAlerts().map((alert, idx) => (
+                <li key={idx} className="flex items-center gap-6 mb-2 p-2 rounded bg-muted" style={{ borderLeft: `6px solid ${alert.color}` }}>
+                  <span className="font-bold" style={{ color: alert.color }}>
+                    Category: {alert.category}
+                  </span>
+                  <span className="font-mono text-foreground">
+                    Value: {alert.value}
+                  </span>
+                  <span className="text-muted-foreground">
+                    Time: {alert.timestamp}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {/* Total Anomaly Severity Chart */}
+        <div className="flex-1 w-full p-4 rounded-lg border-2 bg-card border-border shadow flex flex-col items-center justify-center">
+          <h4 className="mb-2 font-semibold text-foreground">Total Anomaly Severity</h4>
+          <BarResponsiveContainer width="100%" height={220}>
+            <BarChart data={getTotalSeverityBuckets()}>
+              <BarXAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 18, fontWeight: 600 }} />
+              <BarYAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 18, fontWeight: 600 }} />
+              <BarTooltip cursor={{ fill: "hsl(var(--muted))" }} />
+              <Bar dataKey="count">
+                {getTotalSeverityBuckets().map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={
+                    entry.name === "Low"
+                      ? "hsl(var(--success))"
+                      : entry.name === "Medium"
+                      ? "hsl(var(--warning))"
+                      : "hsl(var(--error))"
+                  } />
+                ))}
+              </Bar>
+            </BarChart>
+          </BarResponsiveContainer>
+          <div className="mt-3 text-base text-muted-foreground text-center">
+            Severity is based on z-score: |value - mean| / std<br />
+            Low: &lt;2, Medium: 2-4, High: &gt;=4
+          </div>
+        </div>
+      </div>
+
+      {/* Severity Charts for Each Metric in a horizontal row below Active Alerts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8 w-full">
+        {METRICS.map((metric, idx) => (
+          <div key={metric.key} className="p-4 rounded-lg border-2 bg-card border-border shadow flex flex-col">
+            <div className="font-semibold text-lg text-foreground text-center mb-3">{metric.label} Anomaly Severity</div>
+            <BarResponsiveContainer width="100%" height={220}>
+              <BarChart data={getSeverityBucketsForMetric(metric.key)}>
+                <BarXAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 18, fontWeight: 600 }} />
+                <BarYAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 18, fontWeight: 600 }} />
+                <BarTooltip cursor={{ fill: "hsl(var(--muted))" }} />
+                <Bar dataKey="count">
+                  {getSeverityBucketsForMetric(metric.key).map((entry, idx2) => (
+                    <Cell key={`cell-${idx2}`} fill={
+                      entry.name === "Low"
+                        ? "hsl(var(--success))"
+                        : entry.name === "Medium"
+                        ? "hsl(var(--warning))"
+                        : "hsl(var(--error))"
+                    } />
+                  ))}
+                </Bar>
+              </BarChart>
+            </BarResponsiveContainer>
+            <div className="mt-3 text-base text-muted-foreground text-center">
+              Severity is based on z-score: |value - mean| / std<br />
+              Low: &lt;2, Medium: 2-4, High: &gt;=4
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 2x2 Grid Layout */}
