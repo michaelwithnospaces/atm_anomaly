@@ -71,9 +71,9 @@ def get_anomaly_data(
             spike_indices = chosen_indices[:info["spikes"]]
             drop_indices = chosen_indices[info["spikes"]:info["spikes"] + info["drops"]]
             for idx in spike_indices:
-                info["data"][idx] = 300  # High spike
+                info["data"][idx] = np.random.randint(270, 350)  # Slightly variable high spike
             for idx in drop_indices:
-                info["data"][idx] = 30   # Low drop
+                info["data"][idx] = np.random.randint(10, 60)    # Slightly variable low drop
 
     # Prepare output records
     records = []
@@ -97,6 +97,7 @@ def get_anomaly_data(
         contamination = estimate_contamination(df["value"].values)  # dynamically calculated contamination
         model = IsolationForest(contamination=contamination)
         df["anomaly"] = model.fit_predict(df[["value"]]) == -1
+
         masked = df["value"].mask(df["anomaly"])
         interpolated = masked.interpolate(method="linear")
         df["mean"] = interpolated.rolling(3, center=True).mean()
