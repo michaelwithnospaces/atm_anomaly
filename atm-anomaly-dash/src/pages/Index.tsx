@@ -119,8 +119,8 @@ const Index = () => {
       if (metric.anomaly) {
         const std = metric.std || 1; // avoid div by zero
         const z = Math.abs((metric.value - metric.mean) / std);
-        if (z < 2) buckets.Low++;
-        else if (z < 4) buckets.Medium++;
+        if (z < 4) buckets.Low++;
+        else if (z < 8) buckets.Medium++;
         else buckets.High++;
       }
     });
@@ -140,8 +140,8 @@ const Index = () => {
         if (metric.anomaly) {
           const std = metric.std || 1;
           const z = Math.abs((metric.value - metric.mean) / std);
-          if (z < 2) buckets.Low++;
-          else if (z < 4) buckets.Medium++;
+          if (z < 4) buckets.Low++;
+          else if (z < 8) buckets.Medium++;
           else buckets.High++;
         }
       }
@@ -226,7 +226,7 @@ const Index = () => {
           </BarResponsiveContainer>
           <div className="mt-3 text-base text-muted-foreground text-center">
             Severity is based on z-score: |value - mean| / std<br />
-            Low: &lt;2, Medium: 2-4, High: &gt;=4
+            Low: &lt;4, Medium: 4-8, High: &gt;=8
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ const Index = () => {
             </BarResponsiveContainer>
             <div className="mt-3 text-base text-muted-foreground text-center">
               Severity is based on z-score: |value - mean| / std<br />
-              Low: &lt;2, Medium: 2-4, High: &gt;=4
+              Low: &lt;4, Medium: 4-8, High: &gt;=8
             </div>
           </div>
         ))}
