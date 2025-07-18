@@ -60,23 +60,6 @@ export function MetricControls({
             className="h-8 text-sm bg-background border-border"
           />
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor={`${metric.key}-contamination`} className="text-xs font-medium text-foreground">
-            Contamination
-          </Label>
-          <Input
-            id={`${metric.key}-contamination`}
-            type="number"
-            min={0.01}
-            max={1}
-            step={0.01}
-            value={params[`${metric.key}_contamination`]}
-            onChange={(e) => onParamChange(metric.key, "contamination", e.target.value)}
-            onBlur={(e) => onContaminationBlur(metric.key, parseFloat(e.target.value))}
-            className="h-8 text-sm bg-background border-border"
-          />
-        </div>
       </CardContent>
     </Card>
   )
